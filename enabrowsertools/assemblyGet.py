@@ -22,8 +22,8 @@ import sys
 import gzip
 import xml.etree.ElementTree as ElementTree
 
-import utils
-import sequenceGet
+from . import utils
+from . import sequenceGet
 
 REPLICON = 'assembled-molecule'
 UNLOCALISED = 'unlocalised-scaffold'

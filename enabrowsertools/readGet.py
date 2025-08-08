@@ -21,7 +21,7 @@ import os
 import sys
 import urllib.parse as urlparse
 
-import utils
+from . import utils
 
 
 def check_read_format(output_format):

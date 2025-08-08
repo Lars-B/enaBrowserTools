@@ -22,10 +22,10 @@ import os
 import shutil
 import sys
 
-import sequenceGet
-import assemblyGet
-import readGet
-import utils
+from . import sequenceGet
+from . import assemblyGet
+from . import readGet
+from . import utils
 import traceback
 import time
 
@@ -152,7 +152,7 @@ def download_group(accession, group, output_format, dest_dir, fetch_wgs, extract
                             subtree, expanded)
 
 
-if __name__ == '__main__':
+def main():
     parser = set_parser()
     args = parser.parse_args()
 
@@ -254,3 +254,7 @@ if __name__ == '__main__':
             print(f" - {acc}")
     else:
         print("[INFO] All accessions downloaded successfully.")
+
+
+if __name__ == '__main__':
+    main()

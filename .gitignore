@@ -5,4 +5,4 @@
 
 ### compiled python ###
 python/*.pyc
-python3/__pycache__
+enabrowsertools/__pycache__

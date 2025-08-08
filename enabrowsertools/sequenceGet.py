@@ -19,7 +19,7 @@
 
 import sys
 
-import utils
+from . import utils
 
 
 def write_record(dest_file, accession, output_format, expanded=False):

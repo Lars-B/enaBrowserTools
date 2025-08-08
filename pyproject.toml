@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "enaBrowserTools"
+version = "1.0.0"
+description = "Packagble enaBrowserTools via pip"
+readme = "README.md"
+dependencies = [
+    "requests",
+]
+
+[project.scripts]
+enaGroupGet = "enabrowsertools.enaGroupGet:main"
