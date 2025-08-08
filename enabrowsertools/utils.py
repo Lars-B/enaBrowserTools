@@ -622,13 +622,13 @@ def parse_file_search_result_line(item, accession, output_format, aspera):
         sra_filelist = split_filelist(item[SRA_ASPERA_FIELD])
         fastq_filelist = split_filelist(item[FASTQ_ASPERA_FIELD])
     else:
-        sub_filelist = split_filelist(item[SUBMITTED_FIELD])
-        sra_filelist = split_filelist(item[SRA_FIELD])
-        fastq_filelist = split_filelist(item[FASTQ_FIELD])
+        sub_filelist = split_filelist(item.get(SUBMITTED_FIELD, ""))
+        sra_filelist = split_filelist(item.get(SRA_FIELD, ""))
+        fastq_filelist = split_filelist(item.get(FASTQ_FIELD, ""))
 
-    sub_md5list = split_filelist(item[SUBMITTED_MD5_FIELD])
-    sra_md5list = split_filelist(item[SRA_MD5_FIELD])
-    fastq_md5list = split_filelist(item[FASTQ_MD5_FIELD])
+    sub_md5list = split_filelist(item.get(SUBMITTED_MD5_FIELD, ""))
+    sra_md5list = split_filelist(item.get(SRA_MD5_FIELD, ""))
+    fastq_md5list = split_filelist(item.get(FASTQ_MD5_FIELD, ""))
 
     if is_analysis(accession):
         return data_acc, sub_filelist, sub_md5list

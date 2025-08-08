@@ -60,6 +60,11 @@ def set_parser():
     parser.add_argument('-t', '--subtree', action='store_true',
                         help='Include subordinate taxa (taxon subtree) when querying with NCBI tax ID (default is false)')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.7.2')
+    parser.add_argument(
+        '--failed-file',
+        help='Path to write failed accessions summary (optional)'
+    )
+
     return parser
 
 
@@ -176,6 +181,7 @@ def main():
     aspera = args.aspera
     aspera_settings = args.aspera_settings
     subtree = args.subtree
+    failed_file = args.failed_file
 
     if aspera or aspera_settings is not None:
         aspera = utils.set_aspera(aspera_settings)
@@ -252,6 +258,11 @@ def main():
         print(f"[INFO] Failed or empty: {len(failed_accessions)} accessions")
         for acc in failed_accessions:
             print(f" - {acc}")
+        if failed_file:
+            with open(failed_file, 'w') as f:
+                for failed in failed_accessions:
+                    f.write(failed)
+                    f.write("\n")
     else:
         print("[INFO] All accessions downloaded successfully.")
 
