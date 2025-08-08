@@ -19,6 +19,7 @@
 
 import argparse
 import os
+import shutil
 import sys
 
 import sequenceGet
@@ -179,6 +180,8 @@ if __name__ == '__main__':
     if aspera or aspera_settings is not None:
         aspera = utils.set_aspera(aspera_settings)
 
+    failed_accessions = []
+
     for idx, accession in enumerate(accessions, start=1):
         if len(accessions) > 1:
             print(f"\n[INFO] Processing {idx}/{len(accessions)}: {accession}")
@@ -189,13 +192,16 @@ if __name__ == '__main__':
             )
             sys.stderr.write('If you believe that it should be, please contact ENA ('
                              'https://www.ebi.ac.uk/ena/browser/support) for assistance.\n')
+            failed_accessions.append(accession)
             continue
 
         if not utils.is_study(accession) and not utils.is_sample(accession) and not utils.is_taxid(
                 accession):
             sys.stderr.write(
-                f'ERROR: Invalid accession {accession}. Only sample and study/project accessions or NCBI tax ID supported\n'
+                f'ERROR: Invalid accession {accession}.'
+                f'Only sample and study/project accessions or NCBI tax ID supported\n'
             )
+            failed_accessions.append(accession)
             continue
 
         # Default output format if not set
@@ -209,6 +215,7 @@ if __name__ == '__main__':
             sys.stderr.write('sequence, assembly and wgs groups: embl and fasta formats\n')
             sys.stderr.write('read group: submitted, fastq and sra formats\n')
             sys.stderr.write('analysis group: submitted format only\n')
+            failed_accessions.append(accession)
             continue
 
         try:
@@ -216,12 +223,34 @@ if __name__ == '__main__':
             if utils.is_taxid(accession) and group in ['read', 'analysis']:
                 print(
                     f'[WARN] Tax ID retrieval not yet supported for read and analysis: {accession}')
+                failed_accessions.append(accession)
                 continue
+
+            target_path = os.path.join(dest_dir, accession) if dest_dir else accession
 
             download_group(accession, group, output_format, dest_dir,
                            fetch_wgs, extract_wgs, fetch_meta, aspera, subtree, expanded)
-            print(f'[INFO] Completed: {accession}')
+
+            if not os.path.exists(target_path) or not any(os.scandir(target_path)):
+                print(f"[Warn] No files downloaded for accession {accession}.")
+                failed_accessions.append(accession)
+                # Remove directory that is empty
+                if os.path.exists(target_path):
+                    shutil.rmtree(target_path)
+                else:
+                    print(f'[INFO] Completed: {accession}')
+
         except Exception:
             traceback.print_exc()
             utils.print_error()
+            failed_accessions.append(accession)
             continue
+
+    # Final summary
+    print("\n=== Download Summary ===")
+    if failed_accessions:
+        print(f"[INFO] Failed or empty: {len(failed_accessions)} accessions")
+        for acc in failed_accessions:
+            print(f" - {acc}")
+    else:
+        print("[INFO] All accessions downloaded successfully.")
