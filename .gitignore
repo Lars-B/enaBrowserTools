@@ -6,3 +6,4 @@
 ### compiled python ###
 python/*.pyc
 enabrowsertools/__pycache__
+dist/
