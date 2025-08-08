@@ -155,7 +155,16 @@ if __name__ == '__main__':
     parser = set_parser()
     args = parser.parse_args()
 
-    accession = args.accession.strip()
+    accession_arg = args.accession.strip()
+    # Determine single vs batch mode
+    if os.path.isfile(accession_arg):
+        with open(accession_arg, 'r') as f:
+            accessions = [line.strip() for line in f if line.strip()]
+        print(f"[INFO] Loaded {len(accessions)} accessions from file: {accession_arg}")
+    else:
+        accessions = [accession_arg]
+
+
     group = args.group
     output_format = args.format
     dest_dir = args.dest
@@ -170,37 +179,49 @@ if __name__ == '__main__':
     if aspera or aspera_settings is not None:
         aspera = utils.set_aspera(aspera_settings)
 
-    if not utils.is_available(accession, output_format):
-        sys.stderr.write('ERROR: Study/sample does not exist or is not available for accession provided.\n')
-        sys.stderr.write('If you believe that it should be, please contact ENA ('
-                         'https://www.ebi.ac.uk/ena/browser/support) for assistance.\n')
-        sys.exit(1)
+    for idx, accession in enumerate(accessions, start=1):
+        if len(accessions) > 1:
+            print(f"\n[INFO] Processing {idx}/{len(accessions)}: {accession}")
 
-    if not utils.is_study(accession) and not utils.is_sample(accession) and not utils.is_taxid(accession):
-        sys.stderr.write('ERROR: Invalid accession. Only sample and study/project accessions or NCBI tax ID supported\n')
-        sys.exit(1)
+        if not utils.is_available(accession, output_format):
+            sys.stderr.write(
+                f'ERROR: Study/sample does not exist or is not available for accession {accession}.\n'
+            )
+            sys.stderr.write('If you believe that it should be, please contact ENA ('
+                             'https://www.ebi.ac.uk/ena/browser/support) for assistance.\n')
+            continue
 
-    if output_format is None:
-        if group in (utils.READ, utils.ANALYSIS):
-            output_format = utils.SUBMITTED_FORMAT
-        else:
-            output_format = utils.EMBL_FORMAT
-    elif not utils.group_format_allowed(group, output_format, aspera):
-        sys.stderr.write('ERROR: Illegal group and format combination provided.  Allowed:\n')
-        sys.stderr.write('sequence, assembly and wgs groups: embl and fasta formats\n')
-        sys.stderr.write('read group: submitted, fastq and sra formats\n')
-        sys.stderr.write('analysis group: submitted format only\n')
-        sys.exit(1)
+        if not utils.is_study(accession) and not utils.is_sample(accession) and not utils.is_taxid(
+                accession):
+            sys.stderr.write(
+                f'ERROR: Invalid accession {accession}. Only sample and study/project accessions or NCBI tax ID supported\n'
+            )
+            continue
 
-    try:
-        # disable read and analysis retrieval for taxon until added in size calculation and user response
-        if utils.is_taxid(accession) and group in ['read', 'analysis']:
-            print('Sorry, tax ID retrieval not yet supported for read and analysis')
-            sys.exit(1)
-        download_group(accession, group, output_format, dest_dir, fetch_wgs, extract_wgs, fetch_meta, aspera, subtree,
-                       expanded)
-        print('Completed')
-    except Exception:
-        traceback.print_exc()
-        utils.print_error()
-        sys.exit(1)
+        # Default output format if not set
+        if output_format is None:
+            if group in (utils.READ, utils.ANALYSIS):
+                output_format = utils.SUBMITTED_FORMAT
+            else:
+                output_format = utils.EMBL_FORMAT
+        elif not utils.group_format_allowed(group, output_format, aspera):
+            sys.stderr.write('ERROR: Illegal group and format combination provided.  Allowed:\n')
+            sys.stderr.write('sequence, assembly and wgs groups: embl and fasta formats\n')
+            sys.stderr.write('read group: submitted, fastq and sra formats\n')
+            sys.stderr.write('analysis group: submitted format only\n')
+            continue
+
+        try:
+            # Disable unsupported combos
+            if utils.is_taxid(accession) and group in ['read', 'analysis']:
+                print(
+                    f'[WARN] Tax ID retrieval not yet supported for read and analysis: {accession}')
+                continue
+
+            download_group(accession, group, output_format, dest_dir,
+                           fetch_wgs, extract_wgs, fetch_meta, aspera, subtree, expanded)
+            print(f'[INFO] Completed: {accession}')
+        except Exception:
+            traceback.print_exc()
+            utils.print_error()
+            continue
